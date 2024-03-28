@@ -21,6 +21,13 @@ AudioConnection          patchCord6(biquad3, 0, mixer1, 1);
 AudioControlSGTL5000     sgtl5000_1;     //xy=322,507
 // GUItool: end automatically generated code
 
+const int myInput = AUDIO_INPUT_LINEIN;
+
+
+// Chorus Line set up
+#define CHORUS_DELAY_LENGTH (320*AUDIO_BLOCK_SAMPLES)
+short delayline[CHORUS_DELAY_LENGTH];
+int n_chorus = 2;
 
 void setup() {
   // put your setup code here, to run once:
@@ -39,19 +46,39 @@ void setup() {
 
   //Bitcrush set up
   bitcrusher1.bits(16);
-  bitcrusher1.sampleRate(4500)
+  bitcrusher1.sampleRate(4500);
+
+  //Chorus set up
+  chorus1.begin(delayline, CHORUS_DELAY_LENGTH, n_chorus);
 
 
 }
 
+//pin 14
+uint8_t Knob_1 = A0;
+//pin 16
+uint8_t Knob_2 = A2;
+//pin 17
+uint8_t Knob_3 = A3;
+
+
+float Knob_1_read;
+float Knob_2_read;
+float Knob_3_read;
+
 void loop() {
   // put your main code here, to run repeatedly:
+  
+  Knob_1_read = knobPercent(Knob_1);
+
+  bitcrusher1.sampleRate((4500 * Knob_1_read) + 100);
+
 
 }
 
 
 //Read analog read and returns a .00 to 1 value
-void knobPercent(pin){
+float knobPercent(uint8_t pin){
 
   int readValue;
   float percent;
@@ -59,7 +86,7 @@ void knobPercent(pin){
   readValue = analogRead(pin);
   percent = readValue / 4095;
 
-  return percent;   
+  return percent; 
 }
 
 
