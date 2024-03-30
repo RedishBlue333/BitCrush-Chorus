@@ -9,19 +9,25 @@ AudioInputI2S            i2s2;           //xy=69,100
 AudioEffectBitcrusher    bitcrusher1;    //xy=242,95
 AudioFilterBiquad        biquad1;        //xy=374,95
 AudioEffectChorus        chorus1;        //xy=491,228
-
 AudioFilterBiquad        biquad2;        //xy=631,228
 AudioMixer4              mixer1;         //xy=836,111
+AudioFilterBiquad        biquad3;        //xy=631,228
+AudioMixer4              mixer2;         //xy=836,111
 AudioOutputI2S           i2s1;           //xy=978,114
+AudioAmplifier           gain1;
 AudioConnection          patchCord1(i2s2, 0, bitcrusher1, 0);
 AudioConnection          patchCord2(bitcrusher1, biquad1);
 AudioConnection          patchCord3(biquad1, chorus1);
 AudioConnection          patchCord4(biquad1, 0, mixer1, 0);
 AudioConnection          patchCord5(chorus1, biquad2);
-
+AudioConnection          patchCord12(biquad1, gain1);
 AudioConnection          patchCord6(biquad2, 0, mixer1, 1);
-AudioConnection          patchCord7(mixer1, 0, i2s1, 0);
-AudioConnection          patchCord8(mixer1, 0, i2s1, 1);
+AudioConnection          patchCord9(mixer1, 0, biquad3, 0);
+AudioConnection          patchCord7(mixer1, 0, mixer2, 0);
+AudioConnection          patchCord8(biquad3, 0, mixer2, 1);
+AudioConnection          patchCord10(mixer2, 0, i2s1, 0);
+AudioConnection          patchCord11(mixer2, 0, i2s1, 1);
+
 
 //AudioConnection          patchCord9(biquad2, 0, i2s1, 0);
 
@@ -35,7 +41,7 @@ const int myInput = AUDIO_INPUT_LINEIN;
 // Chorus Line set up
 #define CHORUS_DELAY_LENGTH (320*AUDIO_BLOCK_SAMPLES)
 short delayline[CHORUS_DELAY_LENGTH];
-int n_chorus = 5;
+int n_chorus = 9;
 
 void setup() {
   // put your setup code here, to run once:
@@ -59,17 +65,26 @@ void setup() {
   //biquad1 start up
   biquad1.setLowpass(0, 18000);
 
-
   //Chorus set up
   chorus1.begin(delayline, CHORUS_DELAY_LENGTH, n_chorus);
 
   //biquad2 start up
   biquad2.setLowpass(0, 20000);
+  biquad2.setHighpass(0, 200);
 
+  //gain start up
+  gain1.gain(2);
 
-
+  //mixer1 start up
   mixer1.gain(0, 1);
   mixer1.gain(1, 0);
+
+  //biquad3 start up
+  biquad3.setBandpass(0, 1000);
+
+  //mixer2 start up
+  mixer2.gain(0, .5);
+  mixer2.gain(1, 1);
 
 }
 
@@ -89,22 +104,25 @@ void loop() {
   // put your main code here, to run repeatedly:
   
 
-
   //Reads knob and sets value of bitcrush Sample Rate
   Knob_1_read = knobPercent(Knob_1);
   bitcrusher1.sampleRate(4500 * Knob_1_read + 100);
 
+  //Reads knob and sets value of chorus gain
   Knob_2_read = knobPercent(Knob_2);
   mixer1.gain(1, 1 * Knob_2_read);
 
-  sgtl5000_1.volume(0.5);
+  //Reads knob and sets value of band pass filter freq
+  Knob_3_read = knobPercent(Knob_3);
+  biquad3.setBandpass(0, 10000 * Knob_3_read + 100);
+
+  //sgtl5000_1.volume(0.5);
 
   //Serial.println(Knob_1_read);
 
   delay(100);
 
 }
-
 
 //Read analog read and returns a .00 to 1 value
 float knobPercent(uint8_t pin){
@@ -117,13 +135,3 @@ float knobPercent(uint8_t pin){
 
   return percent; 
 }
-
-
-
-
-
-
-
-
-
-
